@@ -4,3 +4,5 @@ res://common/Inventory/UI/SimpleInventoryUI.gd
 res://common/Inventory/UI/InventoryGridUI/InventoryGridItemUI.tscn
 res://common/Inventory/UI/InventoryGridUI/PopupTooltip.gd
 res://common/Inventory/UI/InventoryGridUI/InventoryGridItemUI.gd
+res://README.md
+res://LICENSE.md
