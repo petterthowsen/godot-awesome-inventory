@@ -2,7 +2,7 @@
 
 This is a simple and extensible framework for handling items and storage.
 
-There are three major classes, all of them extending Resource:
+There are four major classes, all of them extending Resource:
 1. Inventory
 2. InventoryItemType: defines a kind of item
 3. InventoryItem: defines a "real" item that exists in the game. References a InventoryItemType.

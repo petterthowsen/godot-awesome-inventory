@@ -9,10 +9,13 @@ signal capacity_changed(from:int, to:int)
 
 # Returns true if all items in the array are of the same InventoryItemType
 static func is_items_of_same_type(items: Array[InventoryItem]) -> bool:
+	# If the array is empty, return true (no conflicting types)
 	if items.size() == 0:
 		return true
 	
+	# Store the type of the first item
 	var item_type = items[0].item_type
+	# Loop through the rest of the items and check their type
 	for i in range(1, items.size()):
 		if items[i].item_type != item_type:
 			return false
@@ -26,33 +29,35 @@ func _init():
 		slots.append(slot)
 		slot.item_added.connect(_on_slot_item_added.bind(i))
 		slot.item_removed.connect(_on_slot_item_removed.bind(i))
+	emit_changed()  # Emit change when initializing the inventory
 
-
+# Signal handler for when an item is added to a slot
 func _on_slot_item_added(item:InventoryItem, slot_idx:int):
 	item_added.emit(item, slot_idx)
+	emit_changed()
 
-
+# Signal handler for when an item is removed from a slot
 func _on_slot_item_removed(item:InventoryItem, slot_idx:int):
 	item_removed.emit(item, slot_idx)
+	emit_changed()
 
-
-# sorts all items by type and in ascending order
-# all items we be temporarily taken out of their slots
-# and after will after sorting be inserted again, starting from the beginning of the inventory
+# Sorts all items by type in ascending order.
+# Items are temporarily removed from their slots and reinserted after sorting.
 func sort():
 	var items = take_all_items()
 	items.sort_custom(_custom_sort_item_type)
 	
 	for item in items:
 		put(item)
+	emit_changed()
 
-
+# Custom sorting method to compare item types by name
 func _custom_sort_item_type(a:InventoryItem, b:InventoryItem) -> bool:
 	var names = [a.item_type.name, b.item_type.name]
 	names.sort()
 	return names[0] == a.name
 
-
+# Get all items from all slots in the inventory
 func get_all_items() -> Array[InventoryItem]:
 	var items : Array[InventoryItem] = []
 	
@@ -61,16 +66,17 @@ func get_all_items() -> Array[InventoryItem]:
 	
 	return items
 
-
+# Take all items from the inventory and empty all slots
 func take_all_items() -> Array[InventoryItem]:
 	var items :Array[InventoryItem] = []
 	
 	for slot in slots:
 		items.append_array(slot.take_all())
 	
+	emit_changed()
 	return items
 
-
+# Get the total count of items in the inventory
 func get_count() -> int:
 	var count = 0
 	for slot in slots:
@@ -78,12 +84,11 @@ func get_count() -> int:
 	
 	return count
 
-
+# Check if the inventory is empty
 func is_empty() -> bool:
 	return get_count() == 0
 
-
-# Change the capacity of the inventory
+# Change the capacity of the inventory and resize the slots array
 func resize(new_capacity: int):
 	if new_capacity == capacity:
 		return
@@ -98,9 +103,9 @@ func resize(new_capacity: int):
 	capacity = new_capacity
 
 	capacity_changed.emit(old_capacity, new_capacity)
+	emit_changed()
 
-
-# Check if we have space for the given item
+# Check if the inventory has space for a given item
 func has_space_for_item(item: InventoryItem) -> bool:
 	for slot in slots:
 		if slot.type == null or (slot.type == item and slot.type.stackable and slot.available_stacks() > 0):
@@ -117,26 +122,26 @@ func put(item: InventoryItem) -> bool:
 		if slot.type == item.item_type and item.item_type.stackable:
 			if slot.available_stacks() > 0:
 				slot.put(item)
-				print("Item stacked")
+				emit_changed()
 				return true
 	
 	# If stacking isn't possible, find an empty slot
 	for slot in slots:
 		if slot.type == null:
 			slot.put(item)
-			print("item added")
+			emit_changed()
 			return true
 	
 	return false
 
-# Check if we have space for multiple items
+# Check if there is space for multiple items in the inventory
 func has_space_for_items(items: Array[InventoryItem]) -> bool:
 	for item in items:
 		if not has_space_for_item(item):
 			return false
 	return true
 
-# Put many items at once into the inventory
+# Put multiple items into the inventory at once
 func put_many(items: Array[InventoryItem]) -> bool:
 	if not has_space_for_items(items):
 		return false
@@ -144,27 +149,30 @@ func put_many(items: Array[InventoryItem]) -> bool:
 	for item in items:
 		if not put(item):
 			return false
+	emit_changed()
 	return true
 
-# Remove the given item from the inventory
+# Remove a specific item from the inventory
 func take(item: InventoryItem):
 	for slot in slots:
 		if slot.item == item:
 			slot.remove_from_stack(item.stack_count)
 			if slot.is_empty():
 				slot.clear()
+			emit_changed()
 			return
 
-# Take all items from a slot
+# Take all items from a specific slot
 func take_all_from_slot(slot_idx: int) -> Array[InventoryItem]:
 	var slot = slots[slot_idx]
 	var items: Array[InventoryItem] = []
 	if slot.item != null:
 		items.append(slot.item)
 		slot.clear()
+	emit_changed()
 	return items
 
-# Get all items of the given type
+# Get all items of a specific type from the inventory
 func get_of_type(type: InventoryItemType) -> Array[InventoryItem]:
 	var items: Array[InventoryItem] = []
 	for slot in slots:
@@ -172,29 +180,30 @@ func get_of_type(type: InventoryItemType) -> Array[InventoryItem]:
 			items.append(slot.item)
 	return items
 
-# Check if an item exists in the inventory
+# Check if a specific item exists in the inventory
 func has_item(item: InventoryItem) -> bool:
 	for slot in slots:
 		if slot.item == item:
 			return true
 	return false
 
-# Check if an item of a given type exists in the inventory
+# Check if an item of a specific type exists in the inventory
 func has_item_of_type(type: InventoryItemType) -> bool:
 	for slot in slots:
-		if slot.item != null and slot.item.item_type == type:
+		if not slot.is_empty() and slot.type == type:
 			return true
 	return false
 
-# Get the amount of a specific item type
+# Get the total amount of a specific item type in the inventory
 func get_amount_of_item_type(type: InventoryItemType) -> int:
 	var amount = 0
 	for slot in slots:
-		if slot.item != null and slot.item.item_type == type:
-			amount += slot.stack_count
+		if not slot.is_empty():
+			if slot.type == type:
+				amount += slot.count
 	return amount
 
-# Move an item from its current slot to a different slot
+# Move an item from one slot to another
 func move(item: InventoryItem, new_slot_idx: int):
 	for i in range(slots.size()):
 		if slots[i].items.has(item):  # Check if the current slot contains the item
@@ -215,8 +224,9 @@ func move(item: InventoryItem, new_slot_idx: int):
 				var temp_items = new_slot.take_all()  # Take all items from the new slot
 				new_slot.put_all(current_slot.take_all())  # Move all items from the current slot to the new slot
 				current_slot.put_all(temp_items)  # Put the previously taken items into the original slot
+			
+			emit_changed()
 			return
-
 
 # Get the total weight of all items in the inventory
 func get_total_weight() -> int:

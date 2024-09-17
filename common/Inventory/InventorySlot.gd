@@ -1,4 +1,4 @@
-class_name InventorySlot extends Resource
+class_name InventorySlot extends RefCounted
 
 var items:Array[InventoryItem] = []
 
@@ -17,7 +17,7 @@ var weight:float:
 	get:
 		var weight = 0.0
 		for item in items:
-			weight += item.weight
+			weight += item.item_type.weight
 		
 		return weight
 
