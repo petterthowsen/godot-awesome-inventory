@@ -1,0 +1,6 @@
+res://common/Inventory/UI/List/InventoryListUI.tscn
+res://common/Inventory/UI/InventoryGridUI/InventoryGridUI.tscn
+res://common/Inventory/UI/SimpleInventoryUI.gd
+res://common/Inventory/UI/InventoryGridUI/InventoryGridItemUI.tscn
+res://common/Inventory/UI/InventoryGridUI/PopupTooltip.gd
+res://common/Inventory/UI/InventoryGridUI/InventoryGridItemUI.gd
