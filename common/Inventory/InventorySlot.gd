@@ -35,11 +35,9 @@ func available_stacks() -> int:
 	return type.max_stack_size - count
 
 
-func take(count:int = 1):
-	if count == 1:
-		return take_one()
-	else:
-		return take_many(count)
+func take(item:InventoryItem):
+	if item in items:
+		items.erase(item)
 
 
 func take_one() -> InventoryItem:

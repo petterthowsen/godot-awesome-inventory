@@ -155,10 +155,8 @@ func put_many(items: Array[InventoryItem]) -> bool:
 # Remove a specific item from the inventory
 func take(item: InventoryItem):
 	for slot in slots:
-		if slot.item == item:
-			slot.remove_from_stack(item.stack_count)
-			if slot.is_empty():
-				slot.clear()
+		if item in slot.items:
+			slot.take(item)
 			emit_changed()
 			return
 
@@ -213,7 +211,7 @@ func move(item: InventoryItem, new_slot_idx: int):
 			# If the new slot contains the same item type and the item is stackable, try to stack
 			if new_slot.type == item.item_type and item.item_type.stackable:
 				# Transfer as many items as possible
-				var remaining_items = current_slot.take(new_slot.available_stacks())
+				var remaining_items = current_slot.take_many(new_slot.available_stacks())
 				new_slot.put_all(remaining_items)
 				
 				# Clear current slot if empty
